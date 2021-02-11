@@ -1,0 +1,49 @@
+# Default values for integration-api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+image:
+  repository: asia.gcr.io/mycompany/relicthief
+  tag: 298117-907130e128cd14a9538908e33b8522a59521ee17
+  pullPolicy: IfNotPresent
+  pullSecrets: ""
+
+service:
+  name: http
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 80
+  annotations: {}
+
+resources:
+  limits:
+   cpu: 100m
+   memory: 128Mi
+  requests:
+   cpu: 100m
+   memory: 128Mi
+
+
+googleServiceAccountSecret: ""
+environment:
+  - name: NEWRELIC_ACCOUNT_ID
+    value: id_number
+  - name: NEWRELIC_QUERY_API
+    value: secret
+  - name: NEWRELIC_APIKEY
+    value: secret
+
+environmentFromConfigMaps: []
+
+environmentFromSecrets: []
+# - name: SOME_ENV_VAR
+#   valueFrom:
+#     secretKeyRef:
+#       name: SOME_SECRET_NAME
+#       key: SOME_SECRET_KEY
+#
+
+monitoring:
+  enabled: false
+  prometheusOperatorName: prometheus
+  metricsPort: http

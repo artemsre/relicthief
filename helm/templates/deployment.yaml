@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "relicthief.fullname" . }}
+  labels:
+    app: {{ template "relicthief.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "relicthief.name" . }}
+      release: {{ .Release.Name }}
+      role: master
+  template:
+    metadata:
+      labels:
+        app: {{ template "relicthief.name" . }}
+        release: {{ .Release.Name }}
+        role: master
+    spec:
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecrets }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- range .Values.environmentFromSecrets }}
+            - name: {{ .name | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .valueFrom.secretKeyRef.name | quote }}
+                  key: {{ .valueFrom.secretKeyRef.key | quote }}
+            {{- end }}
+            - name: ROLE
+              value: master
+            {{- range .Values.environmentFromSecrets }}
+            - name: {{ .name | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .valueFrom.secretKeyRef.name | quote }}
+                  key: {{ .valueFrom.secretKeyRef.key | quote }}
+            {{- end }}
+            {{- range .Values.environmentFromConfigMaps }}
+            - name: {{ .name | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .valueFrom.configMapKeyRef.name | quote }}
+                  key: {{ .valueFrom.configMapKeyRef.key | quote }}
+            {{- end }}
+            {{- range .Values.environment }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- if .Values.service.enabled }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /health_check
+              port: {{ .Values.service.internalPort }}
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health_check
+              port: {{ .Values.service.internalPort }}
+            periodSeconds: 30
+            timeoutSeconds: 10
+          {{- end }}
+        {{- if .Values.googleServiceAccountSecret }}
+          volumeMounts:
+          - name: google-service-account-creds
+            mountPath: /app/gcp-serviceaccount
+            readOnly: true
+        {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      {{- if .Values.googleServiceAccountSecret }}
+      volumes:
+        - name: google-service-account-creds
+          secret:
+            secretName: {{ .Values.googleServiceAccountSecret }}
+            items:
+              - key: key.json
+                path: serviceaccount.json
+      {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for New relic exporter 'relicthief'
+name: relicthief
+version: 0.1.0

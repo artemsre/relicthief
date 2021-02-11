@@ -1,4 +1,6 @@
 # relicthief
+NewRelic to prometehus exporter. 
+
 We use NewRelic APM feature and Synthetic SLA test. 
 
 There are needs to have one place for all dashboards. We use Grafana. 

@@ -1,0 +1,22 @@
+{{- if .Values.monitoring}}
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "relicthief.fullname" . }}
+  labels:
+    app: {{ template "relicthief.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    prometheus: {{ .Values.monitoring.prometheusOperatorName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "relicthief.name" . }}
+  endpoints:
+  {{- if .Values.monitoring.metricsPort }}  
+  - port: {{ .Values.monitoring.metricsPort }}
+  {{- else }}
+  - port: http
+  {{- end }}
+{{- end }}
+{{- end }}
